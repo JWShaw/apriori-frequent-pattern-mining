@@ -1,15 +1,16 @@
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Scanner;
+import java.util.Set;
+import java.util.Iterator;
 
 public class Table {
 
     /* The rather complicated underlying data structure.  
-    Maps each itemset to itself, along with its number of occurrences. */
-    private HashMap<HashSet<Integer>, Pair<HashSet<Integer>, Integer>> itemsets;
+       Matches each itemset to its number of occurrences. */
+    private HashMap<HashSet<Integer>, Integer> itemsets;
 
     private boolean isCTable;
     private double minSupNum;   // Number of occurrences of a "frequent" item
@@ -36,11 +37,13 @@ public class Table {
                 singleton.add(sc.nextInt());
 
                 if (itemsets.get(singleton) == null) {
-                    itemsets.put(singleton, new Pair<>(singleton, 1));
+                    itemsets.put(singleton, 1);
                 } else {
                     // Increments the count of the set if it has already been encountered
-                    itemsets.get(singleton).second++;
+                    int occurrences = itemsets.get(singleton);
+                    itemsets.replace(singleton, ++occurrences);
                 }
+                System.out.println("Item: " + singleton + " Occurrences: " + itemsets.get(singleton));
             }
         }
         sc.close();
@@ -59,9 +62,22 @@ public class Table {
     }
 
     // Returns a new C-table based on this L-table
-    // public Table selfJoin(double minsup) {
-    //     Iterator iter1 = itemsets.iterator();
-    // }
+    public Table selfJoin(double minsup) {
+        
+        Set itemsetsSet = itemsets.keySet();
+        Iterator<HashSet<Integer>> iter1 = itemsetsSet.iterator();
+
+        HashMap<HashSet<Integer>, Integer> newHashMap = new HashMap<>(); 
+
+        while (iter1.hasNext()) {
+            Iterator<HashSet<Integer>> iter2 = itemsetsSet.iterator();
+            while (iter2.hasNext()) {
+                
+            }
+        }
+
+        return this;
+    }
     
     public boolean isCTable() {
         return isCTable;
