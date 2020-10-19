@@ -5,21 +5,35 @@ import java.util.HashMap;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.Iterator;
+import java.util.List;
+import java.util.ArrayList;
 
 public class Table {
 
     /* The rather complicated underlying data structure.  
        Matches each itemset to its number of occurrences. */
-    private HashMap<HashSet<Integer>, Integer> itemsets;
+    private HashMap<HashSet<Integer>, Integer> supportTable;
 
     private boolean isCTable;
     private double minSupNum;   // Number of occurrences of a "frequent" item
 
-    /* Constructs the first L-table L1 given an input database file.  Should
-    only ever be called once for a given dataset. */
-    public Table(File f, double minSupPercent) throws FileNotFoundException {
-        this.isCTable = false;
-        this.itemsets = new HashMap<>();
+    /* Generates an empty table.  Can be thought of as a C table with zero
+    itemsets. */
+    public Table() {
+        this.isCTable = true;
+        this.supportTable = new HashMap<>();
+    }
+
+    /* Used locally by the selfJoin method to build the next C-table from an 
+    L-table. */
+    private Table(HashMap<HashSet<Integer>, Integer> map, double minSupNum) {
+        this.supportTable = map;
+        this.minSupNum = minSupNum;
+        this.isCTable = true;
+    }
+
+    // Turns this table into the L1 table given the database file
+    public void generateL1(File f, double minSupPercent) throws FileNotFoundException {
 
         Scanner sc = new Scanner(f);
         int dbLines = sc.nextInt();
@@ -36,49 +50,92 @@ public class Table {
                 HashSet<Integer> singleton = new HashSet<>();
                 singleton.add(sc.nextInt());
 
-                if (itemsets.get(singleton) == null) {
-                    itemsets.put(singleton, 1);
+                if (supportTable.get(singleton) == null) {
+                    supportTable.put(singleton, 1);
                 } else {
-                    // Increments the count of the set if it has already been encountered
-                    int occurrences = itemsets.get(singleton);
-                    itemsets.replace(singleton, ++occurrences);
+                    /* Increments the count of the set if it has already been 
+                    encountered */
+                    int occurrences = supportTable.get(singleton);
+                    supportTable.replace(singleton, ++occurrences);
                 }
-                System.out.println("Item: " + singleton + " Occurrences: " + itemsets.get(singleton));
             }
         }
         sc.close();
     }
 
-    /* Used locally by the selfJoin method to build the next C-table from an 
-    L-table. */
-    // private Table(HashMap<HashSet<Integer>, Integer> underlyingHashMap) {
-    //     this.itemsets = underlyingHashMap;
-    //     this.isCTable = true;
-    // }
-    //Queries the database to convert the C-table into an L-table
-
     public void populateLTable(File f) throws FileNotFoundException {
         this.isCTable = false;
+        Scanner sc = new Scanner(f);
+        sc.nextInt();
+
+        while (sc.hasNextInt()) {
+            sc.nextInt();
+            int numItems = sc.nextInt();
+
+            HashSet<Integer> transactionSet = new HashSet<>();
+            for (int i = 0; i < numItems; i++) {
+                transactionSet.add(sc.nextInt());
+            }
+
+            for (HashSet<Integer> itemset : supportTable.keySet()) {
+                if (transactionSet.containsAll(itemset)) {
+                    int occurrences = supportTable.get(itemset);
+                    supportTable.replace(itemset, ++occurrences);
+                }
+            }
+        }
     }
 
     // Returns a new C-table based on this L-table
-    public Table selfJoin(double minsup) {
+    public Table selfJoin() {
         
-        Set itemsetsSet = itemsets.keySet();
-        Iterator<HashSet<Integer>> iter1 = itemsetsSet.iterator();
+        List<HashSet<Integer>> itemsetsList = 
+            new ArrayList<HashSet<Integer>>(supportTable.keySet());
+        HashMap<HashSet<Integer>, Integer> newTable = new HashMap<>();
 
-        HashMap<HashSet<Integer>, Integer> newHashMap = new HashMap<>(); 
+        // This is the size of the itemsets that are found in the next L1 table
+        int newItemSetSize = itemsetsList.get(0).size() + 1;
 
-        while (iter1.hasNext()) {
-            Iterator<HashSet<Integer>> iter2 = itemsetsSet.iterator();
-            while (iter2.hasNext()) {
-                
+        for (int i = 0; i < itemsetsList.size(); i++) {
+            for (int j = i + 1; j < itemsetsList.size(); j++) {
+                HashSet<Integer> mergedSet = new HashSet<>();
+                HashSet<Integer> set1 = itemsetsList.get(i);
+                HashSet<Integer> set2 = itemsetsList.get(j);
+                boolean addToNextTable = true;
+
+                if (supportTable.get(set1) >= minSupNum &&
+                    supportTable.get(set2) >= minSupNum) {
+                        mergedSet.addAll(itemsetsList.get(i));
+                        mergedSet.addAll(itemsetsList.get(j));
+                }
+
+                /* We only want itemsets whose size are one greater than the
+                itemsets in this table */
+                if (mergedSet.size() != newItemSetSize)
+                    continue;
+
+                /* Checks if the itemset has any infrequent subsets.  If so,
+                the itemset is itself infrequent. */
+                for (Integer item : mergedSet) {
+                    HashSet<Integer> subset = new HashSet<Integer>();
+                    subset.addAll(mergedSet);
+                    subset.remove(item);
+
+                    if (supportTable.get(subset) < minSupNum) {
+                        addToNextTable = false;
+                        break;
+                    }
+                } 
+
+                if (addToNextTable) {
+                    newTable.put(mergedSet, 0);
+                }
             }
         }
 
-        return this;
+        return new Table(newTable, this.minSupNum);
     }
-    
+
     public boolean isCTable() {
         return isCTable;
     }
@@ -88,6 +145,16 @@ public class Table {
     }
 
     public int size() {
-        return itemsets.size();
+        return supportTable.size();
+    }
+
+    @Override
+    public String toString() {
+        String result = "";
+        for (HashSet<Integer> itemset : supportTable.keySet()) {
+            result += itemset.toString() + ": " + 
+                supportTable.get(itemset).toString() + "\n";
+        }
+        return result;
     }
 }
