@@ -152,7 +152,7 @@ public class Table {
     public int size() {
         int count = 0;
         for (HashSet<Integer> itemset : supportTable.keySet()) {
-            if (supportTable.get(itemset) > minSupNum) {
+            if (supportTable.get(itemset) >= minSupNum) {
                 count++;
             }
         }
