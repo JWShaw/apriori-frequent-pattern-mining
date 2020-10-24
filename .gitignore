@@ -1,3 +1,4 @@
 instructions.pdf
 *.class
 ./datasets/
+MiningResult.txt
