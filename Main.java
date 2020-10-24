@@ -12,18 +12,20 @@ public class Main {
         try {
             Table t = new Table();
             t.generateL1(f, minsup);
-            System.out.println(t);
-            Table t2 = t.selfJoin();
-            System.out.println(t2);
-            t2.populateLTable(f);
-            System.out.println(t2);
-            Table t3 = t2.selfJoin();
-            System.out.println(t3);
+            System.out.print(t);
+
+            boolean finished = false;
+            while (!finished) {
+                t = t.selfJoin();
+                t.populateLTable(f);
+                System.out.print(t);
+                if (t.size() <= 1) {
+                    finished = true;
+                }
+            }
         } catch (FileNotFoundException fnfe) {
             System.out.println("Error: file not found.");
             System.exit(0);
         }
-
-
     }
 }

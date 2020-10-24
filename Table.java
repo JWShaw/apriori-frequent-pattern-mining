@@ -63,6 +63,7 @@ public class Table {
         sc.close();
     }
 
+    // Reads in the database file and populates the L-table for a given C-table
     public void populateLTable(File f) throws FileNotFoundException {
         this.isCTable = false;
         Scanner sc = new Scanner(f);
@@ -76,7 +77,9 @@ public class Table {
             for (int i = 0; i < numItems; i++) {
                 transactionSet.add(sc.nextInt());
             }
-
+            
+            /* Increments the support table count only if an itemset is a
+            subset of the transaction set */
             for (HashSet<Integer> itemset : supportTable.keySet()) {
                 if (transactionSet.containsAll(itemset)) {
                     int occurrences = supportTable.get(itemset);
@@ -105,8 +108,8 @@ public class Table {
 
                 if (supportTable.get(set1) >= minSupNum &&
                     supportTable.get(set2) >= minSupNum) {
-                        mergedSet.addAll(itemsetsList.get(i));
-                        mergedSet.addAll(itemsetsList.get(j));
+                        mergedSet.addAll(set1);
+                        mergedSet.addAll(set2);
                 }
 
                 /* We only want itemsets whose size are one greater than the
@@ -121,10 +124,11 @@ public class Table {
                     subset.addAll(mergedSet);
                     subset.remove(item);
 
-                    if (supportTable.get(subset) < minSupNum) {
+                    if (supportTable.get(subset) == null || 
+                        supportTable.get(subset) < minSupNum) {
                         addToNextTable = false;
                         break;
-                    }
+                     }
                 } 
 
                 if (addToNextTable) {
@@ -152,8 +156,10 @@ public class Table {
     public String toString() {
         String result = "";
         for (HashSet<Integer> itemset : supportTable.keySet()) {
-            result += itemset.toString() + ": " + 
-                supportTable.get(itemset).toString() + "\n";
+            if (supportTable.get(itemset) >= minSupNum) {
+                result += itemset.toString() + " : " + 
+                    supportTable.get(itemset).toString() + "\n";
+            }
         }
         return result;
     }
