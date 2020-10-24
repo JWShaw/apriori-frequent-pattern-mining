@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
 
+/* This class behaves as both the C-table and L-table class */
 public class Table {
 
     /* The rather complicated underlying data structure.  
@@ -149,7 +150,13 @@ public class Table {
     }
 
     public int size() {
-        return supportTable.size();
+        int count = 0;
+        for (HashSet<Integer> itemset : supportTable.keySet()) {
+            if (supportTable.get(itemset) > minSupNum) {
+                count++;
+            }
+        }
+        return count;
     }
 
     @Override
